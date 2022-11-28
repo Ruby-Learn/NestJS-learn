@@ -1,108 +1,37 @@
-## TypeORM
+## OAuth2
 ### 패키지 설치
-- npm i @nestjs/config
-  - .env 파일에 설정한 환경변수를 사용하기 위한 패키지
-- npm install mysql2
-  - MySQL 연결을 위한 패키지
-- npm i typeorm
-  - TypeORM 사용을 위한 패키지
-- npm i @nestjs/typeorm
-  - typeScript 에서 TypeORM 을 사용하기 위한 패키지
+- npm i passport
+- npm i @nestjs/passport
+- npm i passport-google-oauth20
 
-### 엔티티 생성
-```typescript
-@Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+### OAuth 인증 흐름
+![img.png](img/oauth2.png)
+- Resource Server
+  - 사용자의 정보를 보관하고 제공하는 서버
+    - 인증 및 인가를 거쳐 이메일, 이름 등 사용자의 리소스를 제공
+  - Resource Server 와 Authorization Server 는 동일한 서버로 운영될 수도 있음
+- Authorization Server
+  - 권한 서버
+  - Access Token, Refresh Token 을 발급 및 관리
+- Client
+  - Resource Owner 를 대리하여 리소스 요청을 하는 애플리케이션
+    - Resource Owner 가 인증을 통해 발급받은 Access Token 을 통해 Resource Server 로부터 사용자의 정보를 요청
+    - ex) 인프런, 쿠팡 등
+- Resource Owner
+  - 사용자. 계정의 소유자
 
-  @Column()
-  name: string;
+## Json Web Token
+### 패키지 설치
+- npm i passport-jwt
+- npm i @nestjs/jwt
 
-  @Column()
-  email: string;
-}
-```
-
-### TypeORM 설정
-```typescript
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [User],
-      charset: 'utf8mb4',
-      synchronize: true,
-      logging: true,
-    }),
-  ],
-  controllers: [AppController],
-  providers: [AppService],
-})
-export class AppModule {}
-```
-
-### 커스텀 리포지토리
-- CustomTypeOrmModule 설정
-```typescript
-export class CustomTypeOrmModule {
-  public static forCustomRepository<T extends new (...args: any[]) => any>(
-    repositories: T[],
-  ): DynamicModule {
-    const providers: Provider[] = [];
-
-    for (const repository of repositories) {
-      const entity = Reflect.getMetadata(
-        TYPEORM_EX_CUSTOM_REPOSITORY,
-        repository,
-      );
-
-      if (!entity) {
-        continue;
-      }
-
-      providers.push({
-        inject: [getDataSourceToken()],
-        provide: repository,
-        useFactory: (dataSource: DataSource): typeof repository => {
-          const baseRepository = dataSource.getRepository<any>(entity);
-          return new repository(
-            baseRepository.target,
-            baseRepository.manager,
-            baseRepository.queryRunner,
-          );
-        },
-      });
-    }
-
-    return {
-      exports: providers,
-      module: CustomTypeOrmModule,
-      providers,
-    };
-  }
-}
-```
-
-- CustomRepository 데코레이터
-```typescript
-export const TYPEORM_EX_CUSTOM_REPOSITORY = 'TYPEORM_EX_CUSTOM_REPOSITORY';
-
-export function CustomRepository(entity: Function): ClassDecorator {
-  return SetMetadata(TYPEORM_EX_CUSTOM_REPOSITORY, entity);
-}
-```
-
-- CustomRepository 데코레이터 사용
-```typescript
-@CustomRepository(User)
-export class UserRepository extends Repository<User> {}
-```
+### JWT 인증 흐름
+![img.png](img/jwt.png)
+- Access Token
+  - 사용자 인증을 위한 토큰
+    - 사용자 이메일, 이름 등의 정보를 포함하여 암호화하여 생성한다.
+    - 탈취될 위험을 고려하여 비밀번호 등의 민감한 정보는 포함하지 않아야 한다.
+    - 사용자 정보를 통해 만들어진 토큰으로 일반적으로 보안을 위해 유효기간을 짧게 설정한다.
+- Refresh Token
+  - Access Token 을 재발급할 때 사용되는 토큰
+    - Access Token 의 유효기간이 만료되었을 때 사용자에게 다시 로그인을 요청하지 않고 Refresh Token 을 통해 Access Token 을 재발급받는다.
