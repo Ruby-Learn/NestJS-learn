@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
@@ -37,7 +30,7 @@ export class AuthController {
       maxAge: 1000 * 60 * 30,
     });
 
-    return res.status(HttpStatus.OK);
+    return res.redirect('/');
   }
 
   // 로그아웃은 프론트 쪽에서 토큰을 제거하는 것으로 처리함
