@@ -28,6 +28,8 @@
     "@nestjs/passport": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/typeorm": "^9.0.1",
+    "@types/cookie-parser": "^1.4.3",
+    "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.3",
     "mysql2": "^2.3.3",
     "passport": "^0.6.0",

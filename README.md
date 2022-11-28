@@ -24,6 +24,8 @@
 ### 패키지 설치
 - npm i passport-jwt
 - npm i @nestjs/jwt
+- npm i cookie-parser 
+- npm i @types/cookie-parser
 
 ### JWT 인증 흐름
 ![img.png](img/jwt.png)
