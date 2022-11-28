@@ -10,7 +10,7 @@
   - typeScript 에서 TypeORM 을 사용하기 위한 패키지
 
 ### 엔티티 생성
-```javascript
+```typescript
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -25,7 +25,7 @@ export class User {
 ```
 
 ### TypeORM 설정
-```javascript
+```typescript
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -48,4 +48,61 @@ export class User {
   providers: [AppService],
 })
 export class AppModule {}
+```
+
+### 커스텀 리포지토리
+- CustomTypeOrmModule 설정
+```typescript
+export class CustomTypeOrmModule {
+  public static forCustomRepository<T extends new (...args: any[]) => any>(
+    repositories: T[],
+  ): DynamicModule {
+    const providers: Provider[] = [];
+
+    for (const repository of repositories) {
+      const entity = Reflect.getMetadata(
+        TYPEORM_EX_CUSTOM_REPOSITORY,
+        repository,
+      );
+
+      if (!entity) {
+        continue;
+      }
+
+      providers.push({
+        inject: [getDataSourceToken()],
+        provide: repository,
+        useFactory: (dataSource: DataSource): typeof repository => {
+          const baseRepository = dataSource.getRepository<any>(entity);
+          return new repository(
+            baseRepository.target,
+            baseRepository.manager,
+            baseRepository.queryRunner,
+          );
+        },
+      });
+    }
+
+    return {
+      exports: providers,
+      module: CustomTypeOrmModule,
+      providers,
+    };
+  }
+}
+```
+
+- CustomRepository 데코레이터
+```typescript
+export const TYPEORM_EX_CUSTOM_REPOSITORY = 'TYPEORM_EX_CUSTOM_REPOSITORY';
+
+export function CustomRepository(entity: Function): ClassDecorator {
+  return SetMetadata(TYPEORM_EX_CUSTOM_REPOSITORY, entity);
+}
+```
+
+- CustomRepository 데코레이터 사용
+```typescript
+@CustomRepository(User)
+export class UserRepository extends Repository<User> {}
 ```
