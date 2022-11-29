@@ -1,108 +1,67 @@
-## TypeORM
+## class-validator
 ### 패키지 설치
-- npm i @nestjs/config
-  - .env 파일에 설정한 환경변수를 사용하기 위한 패키지
-- npm install mysql2
-  - MySQL 연결을 위한 패키지
-- npm i typeorm
-  - TypeORM 사용을 위한 패키지
-- npm i @nestjs/typeorm
-  - typeScript 에서 TypeORM 을 사용하기 위한 패키지
+- npm i class-validator
+- npm i @nestjs/class-validator
+- npm i class-transformer
 
-### 엔티티 생성
+### ValidationPipe Global 설정
 ```typescript
-@Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
 
-  @Column()
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+### DTO 에 Class-Validator 적용
+```typescript
+export class UserSignUp {
+  @IsNotEmpty({ message: CommonErrorMessage.INVALID_NAME })
   name: string;
 
-  @Column()
+  @IsEmail({ message: CommonErrorMessage.INVALID_EMAIL })
   email: string;
 }
 ```
 
-### TypeORM 설정
+### Controller 의 파라미터에 커스텀 Pipe 적용
 ```typescript
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [User],
-      charset: 'utf8mb4',
-      synchronize: true,
-      logging: true,
-    }),
-  ],
-  controllers: [AppController],
-  providers: [AppService],
-})
-export class AppModule {}
-```
+// Custom Pipe
+@Injectable()
+export class IdPipe implements PipeTransform {
+  isId(id: number) {
+    return id > 0;
+  }
 
-### 커스텀 리포지토리
-- CustomTypeOrmModule 설정
-```typescript
-export class CustomTypeOrmModule {
-  public static forCustomRepository<T extends new (...args: any[]) => any>(
-    repositories: T[],
-  ): DynamicModule {
-    const providers: Provider[] = [];
-
-    for (const repository of repositories) {
-      const entity = Reflect.getMetadata(
-        TYPEORM_EX_CUSTOM_REPOSITORY,
-        repository,
-      );
-
-      if (!entity) {
-        continue;
-      }
-
-      providers.push({
-        inject: [getDataSourceToken()],
-        provide: repository,
-        useFactory: (dataSource: DataSource): typeof repository => {
-          const baseRepository = dataSource.getRepository<any>(entity);
-          return new repository(
-            baseRepository.target,
-            baseRepository.manager,
-            baseRepository.queryRunner,
-          );
-        },
-      });
+  transform(id: number, metadata: ArgumentMetadata): number {
+    if (this.isId(id)) {
+      return id;
     }
 
-    return {
-      exports: providers,
-      module: CustomTypeOrmModule,
-      providers,
-    };
+    throw new InvalidIdException();
   }
 }
-```
 
-- CustomRepository 데코레이터
-```typescript
-export const TYPEORM_EX_CUSTOM_REPOSITORY = 'TYPEORM_EX_CUSTOM_REPOSITORY';
+// 컨트롤러의 파라미터에 검증 파이프를 직접 적용
+@Controller('users')
+export class UserController {
+  constructor(private readonly userService: UserService) {}
 
-export function CustomRepository(entity: Function): ClassDecorator {
-  return SetMetadata(TYPEORM_EX_CUSTOM_REPOSITORY, entity);
+  @Get(':id')
+  async userInfo(@Param('id', IdPipe) id: number) {
+    return this.userService.userInfo(id);
+  }
 }
-```
-
-- CustomRepository 데코레이터 사용
-```typescript
-@CustomRepository(User)
-export class UserRepository extends Repository<User> {}
 ```
