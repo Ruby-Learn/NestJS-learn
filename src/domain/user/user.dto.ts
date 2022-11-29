@@ -5,6 +5,6 @@ export class UserSignUp {
   @IsNotEmpty({ message: CommonErrorMessage.INVALID_NAME })
   name: string;
 
-  @IsEmail({ message: CommonErrorMessage.INVALID_EMAIL })
+  @IsEmail({}, { message: CommonErrorMessage.INVALID_EMAIL })
   email: string;
 }
