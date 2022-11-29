@@ -34,13 +34,13 @@ export class ControllerInterceptor implements NestInterceptor {
 }
 
 @Injectable()
-export class MethodInterceptor implements NestInterceptor {
+export class RouteInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    console.log('Before Method...');
+    console.log('Before Route...');
 
     const now = Date.now();
     return next
       .handle()
-      .pipe(tap(() => console.log(`After Method... ${Date.now() - now}ms`)));
+      .pipe(tap(() => console.log(`After Route... ${Date.now() - now}ms`)));
   }
 }
