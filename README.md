@@ -39,7 +39,5 @@ export class AppModule {
 }
 ```
 
-### Middleware 와 Interceptor 의 차이점
-- Middleware 는 대상의 전/후 처리를 할 수 있는 Interceptor 와는 달리 전처리만 가능
-- Middleware 는 인증/인가를 담당하는 Guard 이전에 처리. Interceptor 는 Guard 이후에 처리
+### Middleware 와 Interceptor 의 순서
 ![img.png](img/middleware-interceptor.png)
