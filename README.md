@@ -1,108 +1,20 @@
-## TypeORM
-### 패키지 설치
-- npm i @nestjs/config
-  - .env 파일에 설정한 환경변수를 사용하기 위한 패키지
-- npm install mysql2
-  - MySQL 연결을 위한 패키지
-- npm i typeorm
-  - TypeORM 사용을 위한 패키지
-- npm i @nestjs/typeorm
-  - typeScript 에서 TypeORM 을 사용하기 위한 패키지
+## CORS
+- Cross-Origin Resource Sharing. 교차 출처 자원 공유
+- 웹 페이지 상의 제한된 리소스를 최초 자원이 서비스된 도메인 외의 다른 도메인으로부터 요청할 수 있게 허용하는 구조
+  - 일반적으로는 특정 교차 도메인간 요청은 동일 출처 보안 정책에 의해 기본적으로 금지되어 있음
+  - 최근에는 프론트엔드 서버에서 제공한 웹 페이지에서 다른 백엔드 서버로부터 자원을 제공하는 형태가 많아 CORS 설정을 해주어야 함
 
-### 엔티티 생성
+### CORS 설정
 ```typescript
-@Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
 
-  @Column()
-  name: string;
+  app.enableCors({
+    origin: 'http://localhost:5173/',
+    credentials: true,
+  });
 
-  @Column()
-  email: string;
+  await app.listen(3000);
 }
-```
-
-### TypeORM 설정
-```typescript
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [User],
-      charset: 'utf8mb4',
-      synchronize: true,
-      logging: true,
-    }),
-  ],
-  controllers: [AppController],
-  providers: [AppService],
-})
-export class AppModule {}
-```
-
-### 커스텀 리포지토리
-- CustomTypeOrmModule 설정
-```typescript
-export class CustomTypeOrmModule {
-  public static forCustomRepository<T extends new (...args: any[]) => any>(
-    repositories: T[],
-  ): DynamicModule {
-    const providers: Provider[] = [];
-
-    for (const repository of repositories) {
-      const entity = Reflect.getMetadata(
-        TYPEORM_EX_CUSTOM_REPOSITORY,
-        repository,
-      );
-
-      if (!entity) {
-        continue;
-      }
-
-      providers.push({
-        inject: [getDataSourceToken()],
-        provide: repository,
-        useFactory: (dataSource: DataSource): typeof repository => {
-          const baseRepository = dataSource.getRepository<any>(entity);
-          return new repository(
-            baseRepository.target,
-            baseRepository.manager,
-            baseRepository.queryRunner,
-          );
-        },
-      });
-    }
-
-    return {
-      exports: providers,
-      module: CustomTypeOrmModule,
-      providers,
-    };
-  }
-}
-```
-
-- CustomRepository 데코레이터
-```typescript
-export const TYPEORM_EX_CUSTOM_REPOSITORY = 'TYPEORM_EX_CUSTOM_REPOSITORY';
-
-export function CustomRepository(entity: Function): ClassDecorator {
-  return SetMetadata(TYPEORM_EX_CUSTOM_REPOSITORY, entity);
-}
-```
-
-- CustomRepository 데코레이터 사용
-```typescript
-@CustomRepository(User)
-export class UserRepository extends Repository<User> {}
+bootstrap();
 ```
