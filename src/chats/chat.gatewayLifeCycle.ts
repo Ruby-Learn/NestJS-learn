@@ -10,7 +10,7 @@ import { Logger } from '@nestjs/common';
 
 // Socket 생명주기
 @WebSocketGateway({ namespace: 'chatsGatewayInit' })
-export class ChatsGatewayLifeCycle
+export class ChatGatewayLifeCycle
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private logger = new Logger('chat');
