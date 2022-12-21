@@ -5,7 +5,7 @@
 - Globally bound Middleware
   - 모든 요청 전에 전처리를 담당하는 미들웨어
 - Module bound Middleware
-  - 지정한 모듈에 속한 요청의 전처리만 담당하는 미들웨
+  - 지정한 모듈에 속한 요청의 전처리만 담당하는 미들웨어
 
 ### Middleware 적용
 ```typescript
